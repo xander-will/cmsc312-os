@@ -1,12 +1,5 @@
 #include "process.h"
 
-typedef enum {
-    CALC,
-    IO,
-    YIELD,
-    EXE
-} INSTR_ENUM;
-
 typedef struct {
     INSTR_ENUM      type;
     int             cycles;
@@ -17,5 +10,6 @@ struct pcb_struct {
     instruction*    text;
     int             memory; // memory allocated
     int             cycles; // cycles allotted
+
 };
 
