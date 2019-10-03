@@ -1,0 +1,42 @@
+{
+    "name"   : "text_processor",
+    "memory" : 45,
+    "instructions" : [
+        {
+            "operation" : "calculate",
+            "cycles"    : 50
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 100
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 30
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 25
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 45
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 75
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 50
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 20
+        },
+        {
+            "operation" : "exe",
+            "cycles"    : 50
+        }
+    ]
+}

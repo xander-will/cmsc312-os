@@ -11,7 +11,7 @@ struct queue_struct {
     int     space;
 };
 
-queue q_createQueue() {
+queue q_init() {
     queue q = malloc(sizeof(struct queue_struct));
     q->space = INITIAL_SIZE;
     q->a = malloc(sizeof(void*) * q->space);
@@ -33,11 +33,16 @@ void q_add(queue q, void *item) {
 
 void q_remove(queue q, void *item) {
     for (int i = 0; i < q->len; i++)
-        if (q[i] == item)
-            memcpy(q+i, q+i+1, sizeof(void*) * (q->len-i-1));
+        if (q->a[i] == item)
+            memcpy(q->a+i, q->a+i+1, sizeof(void*), --q->len-i);
 
     int overage = q->space - 2*CHUNK;
-    if (overage > s->) // to-do: finish realloc coding
+    if (overage > s->len && overage > INITIAL_SIZE) {
+        q->space += CHUNK;
+        void *temp = realloc(sizeof(void*), q->space);
+        free(q->a);
+        q->a = temp;
+    }
 }
 
 void q_clear(queue q) {
@@ -46,17 +51,22 @@ void q_clear(queue q) {
 
 void q_map(queue q, void (*cb)(void*)) {
     for (int i = 0; i < q->len; i++)
-        cb(q[i]);
+        cb(q->a[i]);
 }
 
 void q_sort(queue q, int (*cb)(void*, void*)) {
     qsort(q->a, q->len, sizeof(void*), cb);
 }
 
-
 void *q_pop(queue q) {
-    /* still deciding whether I want to
-        make this return/remove the top or just
-        return it */
-    q->a[0];
+    void *ret_val = q->a[0];
+    memcpy(q->a, q->a+1, sizeof(void*), --q->len);
+    return ret_val;
+}
+
+void *q_index(queue q, int index) {
+    if (index < 0 || index > q->len)
+        return NULL;
+    else
+        return q->a[index];
 }

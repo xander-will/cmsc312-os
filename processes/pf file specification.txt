@@ -1,0 +1,7 @@
+'p'         1 byte          \
+'f'         1 byte          | 
+name        variable length | File header
+memory      2 bytes         |
+instr count 1 byte          /
+operation   1 byte          \ Repeated instruction metadata
+cycles      1 byte          /
