@@ -1,10 +1,10 @@
 {
-    "name"   : "text_processor",
+    "name"   : "image_editor",
     "memory" : 45,
     "instructions" : [
         {
             "operation" : "calculate",
-            "cycles"    : 50
+            "cycles"    : 150
         },
         {
             "operation" : "calculate",
@@ -12,27 +12,19 @@
         },
         {
             "operation" : "io",
-            "cycles"    : 30
+            "cycles"    : 40
         },
         {
             "operation" : "calculate",
-            "cycles"    : 25
+            "cycles"    : null
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null
         },
         {
             "operation" : "io",
-            "cycles"    : 45
-        },
-        {
-            "operation" : "calculate",
-            "cycles"    : 75
-        },
-        {
-            "operation" : "calculate",
-            "cycles"    : 50
-        },
-        {
-            "operation" : "io",
-            "cycles"    : 20
+            "cycles"    : 40
         },
         {
             "operation" : "exe"
