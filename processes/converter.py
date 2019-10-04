@@ -45,7 +45,7 @@ instruction_table = {
 def instr_gen(instructions):
     for ins in instructions:
         try:
-            b = bytearray([instruction_table.get(ins["operation"]).lower()])
+            b = bytearray([instruction_table.get(ins["operation"].lower())])
             if ("calculate", "io").count(ins["operation"]) == 1:
                 if ins["cycles"] is None:
                     b.append(255)
