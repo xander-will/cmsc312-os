@@ -11,3 +11,7 @@ typedef enum {
 } INSTR_ENUM;
 
 typedef struct pcb_struct *process;
+
+process pr_init(char *filename);
+void pr_terminate(process p);
+bool pr_run(process p);
