@@ -4,35 +4,35 @@
     "instructions" : [
         {
             "operation" : "calculate",
-            "cycles"    : 50
+            "cycles"    : 5
         },
         {
             "operation" : "calculate",
-            "cycles"    : 100
+            "cycles"    : 10
         },
         {
             "operation" : "io",
-            "cycles"    : 30
+            "cycles"    : 5
         },
         {
             "operation" : "calculate",
-            "cycles"    : 25
+            "cycles"    : 5
         },
         {
             "operation" : "io",
-            "cycles"    : 45
+            "cycles"    : 10
         },
         {
             "operation" : "calculate",
-            "cycles"    : 75
+            "cycles"    : 10
         },
         {
             "operation" : "calculate",
-            "cycles"    : 50
+            "cycles"    : 10
         },
         {
             "operation" : "io",
-            "cycles"    : 20
+            "cycles"    : 15
         },
         {
             "operation" : "exe"

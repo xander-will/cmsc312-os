@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
     char **proc_files = ScrapeFiles(FILEPATH, &fl_len);
 
-    simulator s = sim_init(delay ? D_MODE_DELAY : D_MODE_PAUSE, delay_time, quantum, proc_files, fl_len);
+    simulator s = sim_init(D_MODE_PAUSE, delay_time, quantum, proc_files, fl_len);
     while (1)
         sim_run(s);
 
@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
 }
 
 void ParseArgs(int argc, char **argv) {
-    DEBUG_PRINT("Entering ParseArgs");
     int c;
     while ((c = getopt(argc, argv, "dpt:")) != -1) {
         switch (c) {
@@ -72,17 +71,16 @@ void ParseArgs(int argc, char **argv) {
 }
 
 char **ScrapeFiles(char *folder, int *_len) {
-    
     DIR *dr;
     struct dirent *de;
     char **filelist;
-    int len;
+    int len = 0;
+
     TRY(dr = opendir(folder));
-    
     while (de = readdir(dr))
         len++;
+    *_len = len - 2;
 
-    *_len = len;
     filelist = malloc(sizeof(char*) * len);
     rewinddir(dr);
     len = 0;
@@ -100,7 +98,7 @@ char **ScrapeFiles(char *folder, int *_len) {
     )
 }
 
-/* not gonna worry about this rn but if I need it for later...
+/* not gonna worry about this rn but if I need it for later... (just realized I could do this with glob?)
 bool PFCheck(char *p) {
     do {
         if (p[0] == '.' &&

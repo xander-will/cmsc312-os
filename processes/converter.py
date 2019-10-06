@@ -57,7 +57,7 @@ def instr_gen(instructions):
 
 def ito2bytes(x):
     if x < 256:
-        return bytearray([x])
+        return bytearray([0, x])
     else:
         return bytearray([min(x/256, 255), x & 0xFF])
 

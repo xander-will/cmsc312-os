@@ -14,28 +14,32 @@ typedef void (*scheduler)(dispatcher);
 void SimpleRoundRobin(dispatcher d);
 
 struct dispatch_struct {
-    queue       ready;  // adding more in the future obv
-    queue       wait_io;
-    process     current_proc;
-    bool        io;
-    scheduler   sch;
-    int         quantum;
-    int         quant_left;
-    bool        idle;
+    queue           ready;  // adding more in the future obv
+    queue           wait_io;
+    process         current_proc;
+    bool            io;
+    scheduler       sch;
+    int             quantum;
+    int             quant_left;
+    bool            idle;
+    unsigned int    next_pid;
 };
 
 dispatcher dis_yieldCurrProcess(dispatcher d) {
-    q_add(d->io ? d->ready : d->wait_io, d->current_proc);   // ugly way to
-    d->current_proc = NULL;                                 // handle this
+    if (d->current_proc) {
+        q_add(pr_getCurrentInstr(d->current_proc) == IO ? d->wait_io : d->ready, d->current_proc);   // ugly way to
+        d->current_proc = NULL;                                 // handle this
+    }
 }
 
 dispatcher dis_init(int quant, char **filelist, int fl_len) {
     dispatcher d = malloc(sizeof(struct dispatch_struct));
 
+    d->next_pid = 1;
     d->ready = q_init();
     d->wait_io = q_init();
     for (int i = 0; i < fl_len; i++) {
-        int x = (rand() % 10) + 1;    // temp hardcoding of random processes
+        int x = (rand() % 4) + 1;    // temp hardcoding of random processes
         DEBUG_PRINT("[Dispatcher] Initializing %d copies of %s...", x, filelist[i]);
         for (int j = 0; j < x ; j++) {
             dis_createProcess(d, filelist[i]);
@@ -45,8 +49,8 @@ dispatcher dis_init(int quant, char **filelist, int fl_len) {
     d->io = false;
     d->quantum = d->quant_left = quant;
 
+    d->current_proc = NULL; // about to be initialized by d->sch
     d->sch = SimpleRoundRobin;
-    d->sch(d);
 
     DEBUG_PRINT("[Dispatcher] Successfully initialized!");
 
@@ -58,7 +62,7 @@ void dis_schedule(dispatcher d) {
 }
 
 void dis_createProcess(dispatcher d, char *filename) {
-    process p = pr_init(filename);
+    process p = pr_init(filename, d->next_pid++);
     if (p)
         q_add(d->ready, p);
 }
@@ -74,33 +78,47 @@ int dis_runCurrentProcess(dispatcher d) {
      *    multi level queues are added
      *  - uh... that might be it actually 
      */
-    pr_ezprint(d->current_proc);
+    
     if (d->current_proc == NULL) // safety check
         return KERNAL_MODE;     // since I got a bit careless
 
-    INSTR_ENUM ins = pr_run(d->current_proc);
+    pr_ezprint(d->current_proc);
+    INSTR_ENUM ins = pr_getCurrentInstr(d->current_proc);
     switch (ins) {
         case OUT:
             pr_ezprint(d->current_proc);
+            pr_incrementPC(d->current_proc);
             return KERNAL_MODE;
         case EXE:
             q_remove(d->ready, d->current_proc);
             q_remove(d->wait_io, d->current_proc); // lol I wrote the ADT I can be lazy if I want
             pr_terminate(d->current_proc);
+            d->current_proc = NULL;
             return KERNAL_MODE;
         case YIELD:
-        case END:
+            pr_incrementPC(d->current_proc);
             dis_yieldCurrProcess(d);
             return KERNAL_MODE;
         case IO:
             if (!d->io) {
-                q_remove(d->ready, d->current_proc); // lazy logic
-                q_add(d->wait_io, d->current_proc); // but I'll fix it
-                d->sch(d);                      // later...
+                q_add(d->wait_io, d->current_proc); // lazy logic
+                d->current_proc = NULL;            // but I'll fix it
+                d->sch(d);                        // later...
                 return USER_MODE;
             }
-        default:
-            if (--d->quant_left == 0)
+            if (d->io) {
+                if (!pr_run(d->current_proc)) {
+                    q_add(d->ready, d->current_proc);
+                    d->current_proc = NULL;
+                    return KERNAL_MODE;
+                }
+                else if (--d->quant_left == 0)
+                    return KERNAL_MODE;
+                else 
+                    return USER_MODE;
+            }
+        case CALCULATE: default:
+            if (!pr_run(d->current_proc) || --d->quant_left == 0)
                 return KERNAL_MODE;
             else
                 return USER_MODE;
@@ -119,11 +137,11 @@ void dis_io(dispatcher d, bool flag) {
 
 void SimpleRoundRobin(dispatcher d) {
     process p;
-    queue q = d->io ? d->wait_io : d->ready;
+    queue q = !d->io ? d->ready : q_isEmpty(d->wait_io) ? d->ready : d->wait_io;
 
-    TRY(p = q_pop(q));
     if (d->current_proc)
         q_add(q, d->current_proc);
+    TRY(p = q_pop(q));
     d->current_proc = p;
 
     d->quant_left = d->quantum;

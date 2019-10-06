@@ -4,7 +4,7 @@
     "instructions" : [
         {
             "operation" : "calculate",
-            "cycles"    : 150
+            "cycles"    : 15
         },
         {
             "operation" : "io",

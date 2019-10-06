@@ -15,8 +15,10 @@ typedef enum {
 
 typedef struct pcb_struct *process;
 
-process pr_init(char *filename);
+process pr_init(char *filename, unsigned int pid);
 void pr_terminate(process p);
 bool pr_run(process p);
 void pr_print(process p, FILE *fp, bool header);
+INSTR_ENUM pr_getCurrentInstr(process p);
+void pr_incrementPC(process p);
 #define pr_ezprint(p) pr_print(p, stdout, true)

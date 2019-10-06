@@ -4,11 +4,11 @@
     "instructions" : [
         {
             "operation" : "calculate",
-            "cycles"    : 25
+            "cycles"    : 5
         },
         {
             "operation" : "io",
-            "cycles"    : 20
+            "cycles"    : 10
         },
         {
             "operation" : "calculate",
@@ -16,7 +16,7 @@
         },
         {
             "operation" : "io",
-            "cycles"    : 45
+            "cycles"    : 5
         },
         {
             "operation" : "calculate",
@@ -24,7 +24,7 @@
         },
         {
             "operation" : "io",
-            "cycles"    : 20
+            "cycles"    : 5
         },
         {
             "operation" : "exe"

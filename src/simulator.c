@@ -17,13 +17,22 @@ struct sim_struct {
     int     delay;
     int     cycles_since_pause;
     bool    io;
-    bool    io_cycles;
+    int    io_cycles;
     int     total_cycles;
 };
 
 static void PauseExecution() {
-    printf("Press 'return' to proceed. . .");
-    while(getchar() != '\n');
+    char c = '\0';
+
+    printf("Type 'exit' to close or newline to continue. . .");
+    while (c != '\n') {
+        c = getchar();
+        if (c == 'e')
+            if ((c = getchar()) == 'x')
+                if ((c = getchar()) == 'i')
+                    if ((c = getchar()) == 't')
+                        exit(EXIT_SUCCESS);
+    }
 }
 
 simulator sim_init(int delay_mode, int delay, int quantum, char **filelist, int fl_len) {
@@ -36,6 +45,7 @@ simulator sim_init(int delay_mode, int delay, int quantum, char **filelist, int 
     s->mode = KERNAL_MODE;
     s->delay_mode = delay_mode;
     s->delay = (delay > 0) ? delay : 1;
+    s->cycles_since_pause = 0;
     s->io = false;
     s->total_cycles = 0;
 
@@ -47,10 +57,10 @@ void sim_run(simulator s) {
     s->total_cycles++;
     DEBUG_PRINT("\n[Simulator] Cycle %d:", s->total_cycles);
 
-    if (!s->io && (rand() % 100) < 5) { // io generation
-        DEBUG_PRINT("[Simulator] IO event generated.");
+    if (!s->io && ((rand() % 100) < 1)) { // io generation
         s->io = true;
         s->io_cycles = (rand() % 25) + 25; // between 25 - 50
+        DEBUG_PRINT("[Simulator] IO event generated for %d cycles.", s->io_cycles);
         dis_io(s->dis, true);
     }
     else if (s->io) { // set limit on how long io can last
@@ -74,14 +84,14 @@ void sim_run(simulator s) {
             break;
     }
 
-    if (s->delay_mode == D_MODE_PAUSE) {
+//    if (s->delay_mode == D_MODE_PAUSE) {
         if (s->cycles_since_pause == s->delay) {
             s->cycles_since_pause = 0;
             PauseExecution();
         }
         else
             s->cycles_since_pause++;
-    }
+/*    }
     else if (s->delay_mode == D_MODE_DELAY)
-        sleep(s->delay);
+        sleep(s->delay); */
 }

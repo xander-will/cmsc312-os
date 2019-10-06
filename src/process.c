@@ -33,6 +33,7 @@ struct pcb_struct {
     int             cycles_left; // cycles left in the quantum
     int             time;   // how long it's been running
     int             priority;
+    unsigned int    pid;
 };
 
 static char *INSTR_NAME_TABLE[] = { 
@@ -43,7 +44,7 @@ static char *INSTR_NAME_TABLE[] = {
                                     "OUT"
                                   };
 
-process pr_init(char *filename) {
+process pr_init(char *filename, unsigned int pid) {
     int i, num_instr;
     byte a[2], buffer[STR_BUFFER_SIZE];
     FILE *fp = fopen(filename, "rb");
@@ -54,33 +55,38 @@ process pr_init(char *filename) {
 
     TRY(fread(a, 1, 2, fp) == 2);  // sanity check: first two
     TRY(a[0] == 'p' && a[1] == 'f'); // bytes should be 'pf'
-    for (i = 1; i <= STR_BUFFER_SIZE; i++) { // filename
+
+    for (i = 0; i < STR_BUFFER_SIZE; i++) { // filename
         TRY(fread(a, 1, 1, fp) == 1);
-        if ((buffer[0] = a[0]) == '\0')
+        if ((buffer[i] = a[0]) == '\0')
             break;
     }
-    p->name = malloc(sizeof(char)*i);
+    p->name = malloc(sizeof(char)*(i+1));
     strcpy(p->name, buffer);
 
     TRY(fread(a, 1, 2, fp) == 2);    // memory requirements
-    p->memory = (a[1] << 8) | a[0];
+    p->memory = (a[0] << 8) | a[1];
     
     TRY(fread(a, 1, 1, fp) == 1);    // instruction count
     i = a[0];
-    p->text = malloc(sizeof(instruction*) * p->text_len);
+    p->text = malloc(sizeof(instruction*) * i);
     for (p->text_len = 0; p->text_len < i; p->text_len++) {
         TRY(fread(a, 1, 1, fp) == 1);
         if (a[0] == CALCULATE || a[0] == IO) {
             TRY(fread(a+1, 1, 1, fp) == 1);
             if (a[1] == 255)
-                a[1] = (rand() % 25) + 25; // random value
+                a[1] = (rand() % 5) + 10; // random value
         }
-        p->text[i] = ins_init(a[0], a[1]);        
+        else
+            a[1] = 1;
+        p->text[p->text_len] = ins_init(a[0], a[1]);        
     }
     fclose(fp);
 
     p->pc = p->priority = p->time = 0;
-    DEBUG_PRINT("[Process] Successfully opened %s!", filename);
+    p->cycles_left = p->text[0]->cycles;
+    p->pid = pid;
+    DEBUG_PRINT("[Process] Successfully opened %s (PID %d)!", filename, p->pid);
     return p;
 
     // FILE CLEANUP ON ERROR
@@ -93,7 +99,7 @@ process pr_init(char *filename) {
 }
 
 void pr_terminate(process p) {
-    DEBUG_PRINT("[Process] Terminating %s.", p->name);
+    DEBUG_PRINT("[Process] Terminating PID %d.", p->pid);
     for (int i = 0; i < p->text_len; i++) {
         free(p->text[i]);
     }
@@ -107,31 +113,37 @@ void pr_setTime(process p, int time) {
 }
 
 bool pr_run(process p) {
-    DEBUG_PRINT("Entering pr_run")
-    INSTR_ENUM curr_instr = p->text[p->pc]->type;        
-    if (curr_instr == CALCULATE || curr_instr == IO) {
-        p->cycles_left--;
-        if (p->cycles_left == 0) {
-            p->pc++;
-            DEBUG_PRINT("[Process] %s just ended %s.", p->name, INSTR_NAME_TABLE[curr_instr]);
-            return END;
-        }
+    p->cycles_left--;
+    p->time++;
+    if (p->cycles_left == 0) {
+        DEBUG_PRINT("[Process] PID %d just ended %s.", p->pid, INSTR_NAME_TABLE[pr_getCurrentInstr(p)]);
+        p->cycles_left = p->text[++p->pc]->cycles;
+        return false;
     }
-    else
-        p->pc++;
+    else {
+        DEBUG_PRINT("[Process] PID %d just ran %s.", p->pid, INSTR_NAME_TABLE[pr_getCurrentInstr(p)]);
+        return true; 
+    }
+}
 
-    DEBUG_PRINT("[Process] %s just ran %s.", p->name, INSTR_NAME_TABLE[curr_instr]);
-    return curr_instr; 
+INSTR_ENUM pr_getCurrentInstr(process p) {
+    return p->text[p->pc]->type;
+}
+
+void pr_incrementPC(process p) {
+    p->cycles_left = p->text[++p->pc]->cycles;
 }
 
 void pr_print(process p, FILE *fp, bool header) {
     if (header)
         fprintf(fp, "-------------\n");
-    fprintf(fp, "Process: %s\n", p->name);
-    fprintf(fp, "\tMemory = %d bytes\n", p->memory);
+    fprintf(fp, "Process ID %d:\n", p->pid);
+    fprintf(fp, "\tName: %s\n", p->name);
+    fprintf(fp, "\tMemory: %d bytes\n", p->memory);
     fprintf(fp, "\tElapsed time: %d cycles\n", p->time);
-    fprintf(fp, "\tText section: %d instructions", p->text_len);
+    fprintf(fp, "\tText section: %d instructions\n", p->text_len);
     fprintf(fp, "\tCurrent instruction: %s\n", INSTR_NAME_TABLE[p->text[p->pc]->type]);
+    fprintf(fp, "\tTime left in current instruction: %d cycles\n", p->cycles_left);
     if (header)
         fprintf(fp, "-------------\n");
 }

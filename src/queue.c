@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "queue.h"
+#include "macros.h"
 
 #define INITIAL_SIZE 25
 #define CHUNK 15
@@ -35,8 +36,9 @@ void q_add(queue q, void *item) {
 
 void q_remove(queue q, void *item) {
     for (int i = 0; i < q->len; i++)
-        if (q->a[i] == item)
+        if (q->a[i] == item) {
             memcpy(q->a+i, q->a+i+1, sizeof(void*) * --q->len-i);
+        }
 
     int overage = q->space - 2*CHUNK;
     if (overage > q->len && overage > INITIAL_SIZE) {
