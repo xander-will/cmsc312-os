@@ -3,10 +3,9 @@
 #include <string.h>
 
 #include "process.h"
+#include "macros.h"
 
 #define STR_BUFFER_SIZE 250;
-
-#define TRY(expr) if (!(expr)) goto catch
 
 /* instructions */
 typedef struct {
@@ -34,6 +33,12 @@ struct pcb_struct {
     int             time;   // how long it's been running
     int             priority;
 };
+
+static char *INSTR_NAME_TABLE["EXE", 
+                              "CALCULATE",
+                              "IO",
+                              "YIELD",
+                              "OUT"];
 
 process pr_init(char *filename) {
     int i, num_instr;
@@ -71,17 +76,20 @@ process pr_init(char *filename) {
     close(fp);
 
     p->pc = p->priority = p->time = 0;
+    DEBUG_PRINT("[Process] Successfully opened %s!", filename);
     return p;
 
     // FILE CLEANUP ON ERROR
-    catch:
+    CATCH (
         close(fp);
         pr_terminate(p);
-        printf("Error opening %s\n", filename);
+        printf("[Process] Error opening %s\n", filename);
         return NULL;
+    )
 }
 
 void pr_terminate(process p) {
+    DEBUG_PRINT("[Process] Terminating %s.", p->name);
     for (int i = 0; i < p->text_len; i++) {
         free(p->text[i]);
     }
@@ -95,7 +103,30 @@ void pr_setTime(process p, int time) {
 }
 
 bool pr_run(process p) {
+    INSTR_ENUM curr_instr = p->instructions[pc]        
+    if (curr_instr == CALCULATE || curr_instr == IO) {
+        p->cycles_left--;
+        if (p->cycles_left == 0) {
+            p->pc++;
+            DEBUG_PRINT("[Process] %s just ended %s.", p->name, INSTR_NAME_TABLE[curr_instr]);
+            return END;
+        }
+    }
+    else
+        p->pc++;
 
+    DEBUG_PRINT("[Process] %s just ran %s.", p->name, INSTR_NAME_TABLE[curr_instr]);
+    return curr_instr; 
 }
 
-// add instructions now?
+void pr_print(process p, FILE *fp, bool header) {
+    if (header)
+        fprintf(fp, "-------------\n");
+    fprintf(fp, "Process: %s\n", p->name);
+    fprintf(fp, "\tMemory = %d bytes\n", p->memory);
+    fprintf(fp, "\tElapsed time: %d cycles\n", p->time);
+    fprintf(fp, "\tText section: %d instructions", p->text_len);
+    fprintf(fp, "\tCurrent instruction: %s\n", INSTR_NAME_TABLE[p->text[pc]->type]);
+    if (header)
+        fprintf(fp, "-------------\n");
+}

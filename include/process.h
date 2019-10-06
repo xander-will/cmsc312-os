@@ -1,8 +1,11 @@
 #pragma once
 
+#include <stdio.h>
+
 typedef unsigned char byte;
 
 typedef enum {
+    END         -1, // this exists to signal the end of an instruction
     EXE         0,
     CALCULATE   1,
     IO          2,
@@ -15,3 +18,5 @@ typedef struct pcb_struct *process;
 process pr_init(char *filename);
 void pr_terminate(process p);
 bool pr_run(process p);
+void pr_print(process p, FILE *fp, bool header);
+#define pr_ezprint(p) pr_print(p, stdout, true)

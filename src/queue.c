@@ -49,6 +49,10 @@ void q_clear(queue q) {
     q->len = 0;
 }
 
+void q_isEmpty(queue q) {
+    return q->len == 0;
+}
+
 void q_map(queue q, void (*cb)(void*)) {
     for (int i = 0; i < q->len; i++)
         cb(q->a[i]);
@@ -59,6 +63,8 @@ void q_sort(queue q, int (*cb)(void*, void*)) {
 }
 
 void *q_pop(queue q) {
+    if (q_isEmpty(q))
+        return NULL;
     void *ret_val = q->a[0];
     memcpy(q->a, q->a+1, sizeof(void*), --q->len);
     return ret_val;
