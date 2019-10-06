@@ -6,4 +6,4 @@
 #define CATCH(statements) catch: statements
 #define THROW 0
 
-#define DEBUG_PRINT(str) if (DEBUG) printf(str);
+#define DEBUG_PRINT(str) if (DEBUG) { printf(str); printf("\n"); }

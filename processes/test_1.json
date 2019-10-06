@@ -1,0 +1,27 @@
+{
+    "name"   : "test_1",
+    "memory" : 50,
+    "instructions" : [
+        {
+            "operation" : "calculate",
+            "cycles"    : 150
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 5
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null
+        },
+        {
+            "operation" : "yield"
+        },
+        {
+            "operation" : "out"
+        },
+        {
+            "operation" : "exe"
+        }
+    ]
+}

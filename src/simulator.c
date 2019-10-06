@@ -16,6 +16,9 @@ struct sim_struct {
 simulator sim_init(int delay_mode, int delay, int quantum, char **filelist, int fl_len) {
     simulator s = malloc(sizeof(struct sim_struct));
     s->dis = dis_init(quantum, filelist, fl_len);
+    for (int i = 0; i < fl_len; i++)
+        free(filelist[i]);
+    free(filelist);
     s->sim_mode = KERNAL_MODE;
     s->delay_mode = delay_mode;
     s->delay = (delay > 0) ? delay : 1;

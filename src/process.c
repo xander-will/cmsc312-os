@@ -68,8 +68,11 @@ process pr_init(char *filename) {
     p->text = malloc(sizeof(instruction*) * p->text_len);
     for (p->text_len = 0; p->text_len < i; p->text_len++) {
         TRY(fread(a, 1, 1, fp) == 1);
-        if (a[0] == CALCULATE || a[0] == IO)
+        if (a[0] == CALCULATE || a[0] == IO) {
             TRY(fread(a+1, 1, 1, fp) == 1);
+            if (a[1] == 255)
+                a[1] = (rand() % 25) + 25; // random value
+        }
         p->text[i] = ins_init(a[0], a[1]);        
     }
     p->text[0]->type 

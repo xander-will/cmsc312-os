@@ -26,8 +26,13 @@ dispatcher dis_init(int quant, char **filelist, int fl_len) {
 
     d->read = q_init();
     d->wait_io = q_init();
-    for (int i = 0; i < fl_len; i++)
-        dis_createProcess(d, filelist[i]);
+    for (int i = 0; i < fl_len; i++) {
+        int x = (rand % 10) + 1;    // temp hardcoding of random processes
+        for (int j = 0; j < x ; j++) {
+            dis_createProcess(d, filelist[i]);
+        }
+        DEBUG_PRINT("[Dispatcher] Started %d copies of %s.", x, filelist[i]);
+    }
 
     d->io = false;
     d->quantum = d->quant_left = quant;
