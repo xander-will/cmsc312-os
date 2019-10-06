@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #include "simulator.h"
 #include "dispatcher.h"
 #include "process.h"
 #include "macros.h"
+#include "queue.h"
 
 typedef void (*scheduler)(dispatcher);
 
@@ -21,22 +24,29 @@ struct dispatch_struct {
     bool        idle;
 };
 
+dispatcher dis_yieldCurrProcess(dispatcher d) {
+    q_add(d->io ? d->ready : d->wait_io, d->current_proc);   // ugly way to
+    d->current_proc = NULL;                                 // handle this
+}
+
 dispatcher dis_init(int quant, char **filelist, int fl_len) {
     dispatcher d = malloc(sizeof(struct dispatch_struct));
 
-    d->read = q_init();
+    d->ready = q_init();
     d->wait_io = q_init();
     for (int i = 0; i < fl_len; i++) {
-        int x = (rand % 10) + 1;    // temp hardcoding of random processes
+        int x = (rand() % 10) + 1;    // temp hardcoding of random processes
+        DEBUG_PRINT("[Dispatcher] Initializing %d copies of %s...", x, filelist[i]);
         for (int j = 0; j < x ; j++) {
             dis_createProcess(d, filelist[i]);
         }
-        DEBUG_PRINT("[Dispatcher] Started %d copies of %s.", x, filelist[i]);
     }
 
     d->io = false;
     d->quantum = d->quant_left = quant;
-    d->scheduler = SimpleRoundRobin;
+
+    d->sch = SimpleRoundRobin;
+    d->sch(d);
 
     DEBUG_PRINT("[Dispatcher] Successfully initialized!");
 
@@ -48,11 +58,12 @@ void dis_schedule(dispatcher d) {
 }
 
 void dis_createProcess(dispatcher d, char *filename) {
-    process p = p_init(filename);
-    q_add(d->ready, p);
+    process p = pr_init(filename);
+    if (p)
+        q_add(d->ready, p);
 }
 
-void dis_isIdle(dispatcher d) {
+bool dis_isIdle(dispatcher d) {
     return q_isEmpty(d->ready) && q_isEmpty(d->wait_io);
 }
 
@@ -63,23 +74,28 @@ int dis_runCurrentProcess(dispatcher d) {
      *    multi level queues are added
      *  - uh... that might be it actually 
      */
-    INSTR_ENUM ins = pr_run(current_proc);
+    pr_ezprint(d->current_proc);
+    if (d->current_proc == NULL) // safety check
+        return KERNAL_MODE;     // since I got a bit careless
+
+    INSTR_ENUM ins = pr_run(d->current_proc);
     switch (ins) {
         case OUT:
-            pr_ezprint(current_proc);
-            break;
+            pr_ezprint(d->current_proc);
+            return KERNAL_MODE;
         case EXE:
-            q_remove(d->ready, current_proc);
-            q_remove(d->wait_io, current_proc); // lol I wrote the ADT I can be lazy if I want
-            pr_terminate(current_proc);
-        case END:
+            q_remove(d->ready, d->current_proc);
+            q_remove(d->wait_io, d->current_proc); // lol I wrote the ADT I can be lazy if I want
+            pr_terminate(d->current_proc);
+            return KERNAL_MODE;
         case YIELD:
-            
+        case END:
+            dis_yieldCurrProcess(d);
             return KERNAL_MODE;
         case IO:
             if (!d->io) {
-                q_remove(d->ready, current_proc); // lazy logic
-                q_add(d->wait_io, current_proc); // but I'll fix it
+                q_remove(d->ready, d->current_proc); // lazy logic
+                q_add(d->wait_io, d->current_proc); // but I'll fix it
                 d->sch(d);                      // later...
                 return USER_MODE;
             }
@@ -93,22 +109,27 @@ int dis_runCurrentProcess(dispatcher d) {
 
 void dis_io(dispatcher d, bool flag) {
     d->io = flag;
-    d->sch(d);
-    DEBUG_PRINT("[Dispatcher] IO mode is on.");
+    dis_yieldCurrProcess(d);
+    d->sch(d);                        
+    DEBUG_PRINT("[Dispatcher] IO mode is %s.", flag ? "on" : "off");
 }
 
 
 /*  schedulers  */
 
 void SimpleRoundRobin(dispatcher d) {
+    process p;
     queue q = d->io ? d->wait_io : d->ready;
 
-    TRY(process p = q_pop(q));
-    q_add(q, p);
+    TRY(p = q_pop(q));
+    if (d->current_proc)
+        q_add(q, d->current_proc);
+    d->current_proc = p;
 
     d->quant_left = d->quantum;
 
     DEBUG_PRINT("[Dispatcher] Ran SimpleRoundRobin.");
+    return;
 
     CATCH (
         d->idle = true;

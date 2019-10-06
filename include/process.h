@@ -5,12 +5,12 @@
 typedef unsigned char byte;
 
 typedef enum {
-    END         -1, // this exists to signal the end of an instruction
-    EXE         0,
-    CALCULATE   1,
-    IO          2,
-    YIELD       3,
-    OUT         4
+    END         = -1, // this exists to signal the end of an instruction
+    EXE         = 0,
+    CALCULATE   = 1,
+    IO          = 2,
+    YIELD       = 3,
+    OUT         = 4
 } INSTR_ENUM;
 
 typedef struct pcb_struct *process;

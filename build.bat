@@ -1,0 +1,1 @@
+gcc -std=c11 -I include -o bin/xos src/*.c

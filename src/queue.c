@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "queue.h"
 
@@ -6,7 +8,7 @@
 #define CHUNK 15
 
 struct queue_struct {
-    void    *a;
+    void    **a;
     int     len;
     int     space;
 };
@@ -23,7 +25,7 @@ queue q_init() {
 void q_add(queue q, void *item) {
     if (q->space <= q->len) {
         q->space += CHUNK;
-        void *temp = realloc(sizeof(void*), q->space);
+        void **temp = realloc(q->a, sizeof(void*) * q->space);
         free(q->a);
         q->a = temp;
     }
@@ -34,12 +36,12 @@ void q_add(queue q, void *item) {
 void q_remove(queue q, void *item) {
     for (int i = 0; i < q->len; i++)
         if (q->a[i] == item)
-            memcpy(q->a+i, q->a+i+1, sizeof(void*), --q->len-i);
+            memcpy(q->a+i, q->a+i+1, sizeof(void*) * --q->len-i);
 
     int overage = q->space - 2*CHUNK;
-    if (overage > s->len && overage > INITIAL_SIZE) {
+    if (overage > q->len && overage > INITIAL_SIZE) {
         q->space += CHUNK;
-        void *temp = realloc(sizeof(void*), q->space);
+        void **temp = realloc(q->a, sizeof(void*) * q->space);
         free(q->a);
         q->a = temp;
     }
@@ -49,7 +51,7 @@ void q_clear(queue q) {
     q->len = 0;
 }
 
-void q_isEmpty(queue q) {
+bool q_isEmpty(queue q) {
     return q->len == 0;
 }
 
@@ -58,7 +60,7 @@ void q_map(queue q, void (*cb)(void*)) {
         cb(q->a[i]);
 }
 
-void q_sort(queue q, int (*cb)(void*, void*)) {
+void q_sort(queue q, int (*cb)(const void*, const void*)) {
     qsort(q->a, q->len, sizeof(void*), cb);
 }
 
@@ -66,7 +68,7 @@ void *q_pop(queue q) {
     if (q_isEmpty(q))
         return NULL;
     void *ret_val = q->a[0];
-    memcpy(q->a, q->a+1, sizeof(void*), --q->len);
+    memcpy(q->a, q->a+1, sizeof(void*) * --q->len);
     return ret_val;
 }
 

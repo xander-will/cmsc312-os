@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     int fl_len;
 
     srand(time(0));
-
+    
     ParseArgs(argc, argv);
 
     char **proc_files = ScrapeFiles(FILEPATH, &fl_len);
@@ -32,8 +32,10 @@ int main(int argc, char **argv) {
     return 0; // force of habit lol
 }
 
-int ParseArgs(int argc, char **argv) {
-    while ((int c = getopt(argc, argv, "dpt:")) != -1) {
+void ParseArgs(int argc, char **argv) {
+    DEBUG_PRINT("Entering ParseArgs");
+    int c;
+    while ((c = getopt(argc, argv, "dpt:")) != -1) {
         switch (c) {
             case 'd':
                 TRY(!pause);
@@ -51,9 +53,11 @@ int ParseArgs(int argc, char **argv) {
                 break;
             case '?':
             default:
+                DEBUG_PRINT("%c", c);
                 TRY(THROW);
         }
     }
+    return;
 
     CATCH (
         printf("Usage: xos [-d | -p] [-q QUANTUM] [-t DELAY_TIME]\n");
@@ -67,12 +71,14 @@ int ParseArgs(int argc, char **argv) {
     )
 }
 
-char **ScrapeBytecode(char *folder, int *_len) {
+char **ScrapeFiles(char *folder, int *_len) {
+    
+    DIR *dr;
     struct dirent *de;
     char **filelist;
     int len;
-
-    TRY(DIR *dr = opendir(folder));
+    TRY(dr = opendir(folder));
+    
     while (de = readdir(dr))
         len++;
 
@@ -81,10 +87,11 @@ char **ScrapeBytecode(char *folder, int *_len) {
     rewinddir(dr);
     len = 0;
     while (de = readdir(dr)) {
-        filelist[len] = malloc(sizeof(char)*strlen(de->d_name));
-        strcpy(filelist[len++], de->d_name);
+        if (de->d_name[0] != '.') { // still need to figure out how to disable this
+            filelist[len] = malloc(sizeof(char)*(strlen(de->d_name)+strlen(folder)+2));
+            sprintf(filelist[len++], "%s/%s", folder, de->d_name);
+        }
     }
-
     return filelist;
 
     CATCH (
