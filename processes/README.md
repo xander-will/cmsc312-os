@@ -8,10 +8,12 @@ JSON process files can be dumped into this folder and converted
 to .pf bytecode that is used by the OS simulator. 
 
 As of October 3rd, 2019, these are the required fields for the processes:
-    name - string - This is used for the filename, and is           stored in the file header
+    name - string - This is used for the filename, and is           
+        stored in the file header
     memory - int - This is the memory used by the process,
         if larger than 0xFFFF it is floored to 0xFFFF
-    instructions - array - This is the list of instructions,       the number of instructions is calculated during conversion
+    instructions - array - This is the list of instructions,       
+        the number of instructions is calculated during conversion
 
 Each instruction requires these fields:
     operation - string - This is the operation performed by
