@@ -1,7 +1,7 @@
 ## XOS: Simulated Operating System for CMSC 312
-# Written by Xander Will, Fall 2019
+#### Written by Xander Will, Fall 2019
 
-To build, run 'build', same for 'run'
+To build, run `build`, same for `run`
 
 This program uses the MinGW runtime and thus may work on non-Windows machines... as I do not own one I have not tested it!
 
