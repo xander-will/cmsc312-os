@@ -1,6 +1,6 @@
 Usage:
 
-python converter.py [optional list of file names]
+```python converter.py [optional list of file names]```
 
 ---
 
