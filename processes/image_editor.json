@@ -1,33 +1,39 @@
 {
     "name"   : "image_editor",
-    "memory" : 45,
     "instructions" : [
         {
             "operation" : "calculate",
-            "cycles"    : 20
+            "cycles"    : 20,
+            "memory"    : 10
         },
         {
             "operation" : "calculate",
-            "cycles"    : 10
+            "cycles"    : 10,
+            "memory"    : 5
         },
         {
             "operation" : "io",
-            "cycles"    : 15
+            "cycles"    : 15,
+            "memory"    : 5
         },
         {
             "operation" : "calculate",
-            "cycles"    : null
+            "cycles"    : null,
+            "memory"    : 15
         },
         {
             "operation" : "calculate",
-            "cycles"    : null
+            "cycles"    : null,
+            "memory"    : 8
         },
         {
             "operation" : "io",
-            "cycles"    : 15
+            "cycles"    : 15,
+            "memory"    : 13
         },
         {
-            "operation" : "exe"
+            "operation" : "exe",
+            "memory"    : 1
         }
     ]
 }

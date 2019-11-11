@@ -53,6 +53,10 @@ void q_clear(queue q) {
     q->len = 0;
 }
 
+size_t q_size(queue q) {
+    return q->len;
+}
+
 bool q_isEmpty(queue q) {
     return q->len == 0;
 }

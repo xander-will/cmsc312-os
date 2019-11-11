@@ -1,33 +1,39 @@
 {
     "name"   : "sensor_driver",
-    "memory" : 15,
     "instructions" : [
         {
             "operation" : "io",
-            "cycles"    : null
+            "cycles"    : null,
+            "memory"    : 20
         },
         {
             "operation" : "calculate",
-            "cycles"    : 10
+            "cycles"    : 10,
+            "memory"    : 5
         },
         {
             "operation" : "io",
-            "cycles"    : null
+            "cycles"    : null,
+            "memory"    : 2
         },
         {
             "operation" : "calculate",
-            "cycles"    : 10
+            "cycles"    : 10,
+            "memory"    : 5
         },
         {
             "operation" : "io",
-            "cycles"    : null
+            "cycles"    : null,
+            "memory"    : 2
         },
         {
             "operation" : "calculate",
-            "cycles"    : 20
+            "cycles"    : 20,
+            "memory"    : 5
         },
         {
-            "operation" : "exe"
+            "operation" : "exe",
+            "memory"    : 1
         }
     ]
 }

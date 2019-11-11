@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "simulator.h"
 #include "dispatcher.h"
@@ -16,6 +17,7 @@ void SimpleRoundRobin(dispatcher d);
 struct dispatch_struct {
     queue           ready;  // adding more in the future obv
     queue           wait_io;
+    queue           wait_mem; // holds strings, not processes
     process         current_proc;
     bool            io;
     scheduler       sch;
@@ -39,7 +41,7 @@ dispatcher dis_init(int quant, char **filelist, int fl_len) {
     d->ready = q_init();
     d->wait_io = q_init();
     for (int i = 0; i < fl_len; i++) {
-        int x = (rand() % 4) + 1;    // temp hardcoding of random processes
+        int x = (rand() % 50) + 1;    // temp hardcoding of random processes
         DEBUG_PRINT("[Dispatcher] Initializing %d copies of %s...", x, filelist[i]);
         for (int j = 0; j < x ; j++) {
             dis_createProcess(d, filelist[i]);
@@ -62,13 +64,30 @@ void dis_schedule(dispatcher d) {
 }
 
 void dis_createProcess(dispatcher d, char *filename) {
-    process p = pr_init(filename, d->next_pid++);
-    if (p)
+    int mem;
+
+    process p = pr_init(filename, d->next_pid++, &mem);
+    if (!p) {
+        if (mem) {
+            char *new_str = malloc(sizeof(char) * strlen(filename));
+            strcpy(new_str, filename);
+            q_add(d->wait_mem, new_str);
+        }
+    }
+    else
         q_add(d->ready, p);
 }
 
 bool dis_isIdle(dispatcher d) {
     return q_isEmpty(d->ready) && q_isEmpty(d->wait_io);
+}
+
+void dis_addWaitingProcesses(dispatcher d) {
+    int len = q_size(d->wait_mem);
+    for (int i = 0; i < len; i++) {
+        char *filename = q_pop(d->wait_mem);
+        dis_createProcess(d, filename);
+    }
 }
 
 int dis_runCurrentProcess(dispatcher d) {
@@ -88,12 +107,13 @@ int dis_runCurrentProcess(dispatcher d) {
         case OUT:
             pr_ezprint(d->current_proc);
             pr_incrementPC(d->current_proc);
-            return KERNAL_MODE;
+            return USER_MODE;
         case EXE:
             q_remove(d->ready, d->current_proc);
             q_remove(d->wait_io, d->current_proc); // lol I wrote the ADT I can be lazy if I want
             pr_terminate(d->current_proc);
             d->current_proc = NULL;
+            dis_addWaitingProcesses(d);
             return KERNAL_MODE;
         case YIELD:
             pr_incrementPC(d->current_proc);

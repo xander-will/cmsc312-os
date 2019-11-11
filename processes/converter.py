@@ -42,18 +42,18 @@ instruction_table = {
     "yield"     :   3,
     "out"       :   4
 }
-def instr_gen(instructions):
-    for ins in instructions:
-        try:
-            b = bytearray([instruction_table.get(ins["operation"].lower())])
-            if ("calculate", "io").count(ins["operation"]) == 1:
-                if ins["cycles"] is None:
-                    b.append(255)
-                else:
-                    b.append(min(ins["cycles"], 254))
-            yield b
-        except KeyError:
-            print(f"This instruction is not valid: {ins}")
+def instr_convert(ins):
+    try:
+        b = bytearray([instruction_table.get(ins["operation"].lower())])
+        if ("calculate", "io").count(ins["operation"]) == 1:
+            if ins["cycles"] is None:
+                b.append(255)
+            else:
+                b.append(min(ins["cycles"], 254))
+        b.append(min(ins["memory"], 255))
+        return b
+    except KeyError:
+        print(f"This instruction is not valid: {ins}")
 
 def ito2bytes(x):
     if x < 256:
@@ -65,14 +65,18 @@ def bytes_gen(dicts):
     for d in dicts:
         try:
             print(f"Generating bytecode for {d['name']}...")
+            instr_bytes = bytearray()
+            memory_size = 0
+            for instr in d["instructions"][:255]:
+                instr_bytes.extend(instr_convert(instr))
+                memory_size += instr["memory"]
+
             b = bytearray([0x70, 0x66])  # sanity check: "pf" as first two bytes
             b.extend(d["name"].encode("utf-8"))
             b.append(0)
-            b.extend(ito2bytes(d["memory"]))
+            b.extend(ito2bytes(memory_size))
             b.append(min(len(d["instructions"]), 255))
-            instr_bytes = instr_gen(d["instructions"][:255])
-            for ib in instr_bytes:
-                b.extend(ib)
+            b.extend(instr_bytes)
 
             filename = "bytecode\\" + d["name"] + ".pf"
             print(f"Writing {filename}...")
