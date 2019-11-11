@@ -8,6 +8,7 @@
 #include "process.h"
 #include "macros.h"
 #include "queue.h"
+#include "monitor.h"
 
 typedef void (*scheduler)(dispatcher);
 
@@ -25,6 +26,9 @@ struct dispatch_struct {
     int             quant_left;
     bool            idle;
     unsigned int    next_pid;
+    struct {
+        monitor     a, b, c;
+    }               mutexes;
 };
 
 dispatcher dis_yieldCurrProcess(dispatcher d) {
@@ -41,7 +45,7 @@ dispatcher dis_init(int quant, char **filelist, int fl_len) {
     d->ready = q_init();
     d->wait_io = q_init();
     for (int i = 0; i < fl_len; i++) {
-        int x = (rand() % 50) + 1;    // temp hardcoding of random processes
+        int x = (rand() % 4) + 1;    // temp hardcoding of random processes
         DEBUG_PRINT("[Dispatcher] Initializing %d copies of %s...", x, filelist[i]);
         for (int j = 0; j < x ; j++) {
             dis_createProcess(d, filelist[i]);
@@ -50,6 +54,10 @@ dispatcher dis_init(int quant, char **filelist, int fl_len) {
 
     d->io = false;
     d->quantum = d->quant_left = quant;
+
+    d->mutexes.a = mon_init(MONITOR_A);
+    d->mutexes.b = mon_init(MONITOR_B);
+    d->mutexes.c = mon_init(MONITOR_C);
 
     d->current_proc = NULL; // about to be initialized by d->sch
     d->sch = SimpleRoundRobin;
@@ -90,6 +98,23 @@ void dis_addWaitingProcesses(dispatcher d) {
     }
 }
 
+static monitor monitorTable(dispatcher d, int mutex) {
+    switch (mutex) {
+        default: case MONITOR_A: return d->mutexes.a;
+        case MONITOR_B: return d->mutexes.b;
+        case MONITOR_C: return d->mutexes.c;
+    }
+}
+
+static void monitorRelease(dispatcher d, int mon_num) { 
+    if (pr_hasMutex(d->current_proc, mon_num)) {
+        monitor m = monitorTable(d, mon_num);
+        process p = mon_release(m);
+        if (p) 
+            q_add(d->ready, p);
+    }
+}
+
 int dis_runCurrentProcess(dispatcher d) {
     /*  todo:
      *  - detect which queue is currently in play
@@ -97,13 +122,26 @@ int dis_runCurrentProcess(dispatcher d) {
      *    multi level queues are added
      *  - uh... that might be it actually 
      */
-    
+    monitor m;
     if (d->current_proc == NULL) // safety check
         return KERNAL_MODE;     // since I got a bit careless
 
     pr_ezprint(d->current_proc);
     INSTR_ENUM ins = pr_getCurrentInstr(d->current_proc);
     switch (ins) {
+        case ACQUIRE:
+            m = monitorTable(d, pr_getInstrArg(d->current_proc));
+            pr_incrementPC(d->current_proc);
+            if (mon_acquire(m, d->current_proc))
+                return USER_MODE;
+            else {
+                d->current_proc = NULL;
+                return KERNAL_MODE;
+            }
+        case RELEASE:
+            pr_incrementPC(d->current_proc);
+            monitorRelease(d, pr_getInstrArg(d->current_proc));
+            return KERNAL_MODE;
         case OUT:
             pr_ezprint(d->current_proc);
             pr_incrementPC(d->current_proc);
@@ -111,6 +149,9 @@ int dis_runCurrentProcess(dispatcher d) {
         case EXE:
             q_remove(d->ready, d->current_proc);
             q_remove(d->wait_io, d->current_proc); // lol I wrote the ADT I can be lazy if I want
+            monitorRelease(d, MONITOR_A);
+            monitorRelease(d, MONITOR_B);
+            monitorRelease(d, MONITOR_C);
             pr_terminate(d->current_proc);
             d->current_proc = NULL;
             dis_addWaitingProcesses(d);

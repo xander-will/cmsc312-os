@@ -27,16 +27,20 @@ bool mem_check(int size) {
 }
 
 list mem_allocate(int size) {
+    DEBUG_PRINT("[Memory] Entering memory alloc");
     if (size > mem_remaining)
         return NULL;
 
     list page_list = l_init();
 
+    DEBUG_PRINT("[Memory] List initialized");
     for (int i = 0; i < TOTAL_MEM; i++) {
         if (!page_table[i].location) {
+            DEBUG_PRINT("[Memory] Found page");
             page_table[i].index = -1;
             for (int j = 0; j < PHYSICAL_MEM; j++) {
                 if (!phys_mem[j]) {
+                    DEBUG_PRINT("[Memory] Allocating in physical memory");
                     phys_mem[j] = &page_table[i];
                     page_table[i].index = j;
                     page_table[i].location = PHYSICAL;
@@ -46,6 +50,7 @@ list mem_allocate(int size) {
             if (page_table[i].index == -1) {
                 for (int j = 0; j < VIRTUAL_MEM; j++) {
                     if (!virt_mem[j]) {
+                        DEBUG_PRINT("[Memory] Allocating in virtual memory");
                         virt_mem[j] = &page_table[i];
                         page_table[i].index = j;
                         page_table[i].location = VIRTUAL;
@@ -65,6 +70,7 @@ list mem_allocate(int size) {
 }
 
 void mem_deallocate(list page_list) {
+    //DEBUG_PRINT("[Memory] Deallocating memory");
     for (int i = 0; i < l_size(page_list); i++) {
         struct page *p = l_get(page_list, i);
         if (p->location == PHYSICAL) {

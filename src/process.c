@@ -14,14 +14,18 @@
 typedef struct {
     INSTR_ENUM      type;
     int             cycles;
+    int             mutex;
     list            memory;
 } instruction;
 
 instruction *ins_init(INSTR_ENUM t, int c, int mem_size) {
+    DEBUG_PRINT("[Process] Entering instruction init");
     instruction *ins = malloc(sizeof(instruction*));
     ins->type = t;
     ins->cycles = c;
+    ins->mutex = c;
     ins->memory = mem_allocate(mem_size);
+    DEBUG_PRINT("[Process] Exiting instruction init");
 
     return ins;
 }
@@ -37,6 +41,7 @@ struct pcb_struct {
     int             cycles_left; // cycles left in the quantum
     int             time;   // how long it's been running
     int             priority;
+    int             mutexes;
     unsigned int    pid;
 };
 
@@ -45,12 +50,16 @@ static char *INSTR_NAME_TABLE[] = {
                                     "CALCULATE",
                                     "IO",
                                     "YIELD",
-                                    "OUT"
+                                    "OUT",
+                                    "ACQUIRE",
+                                    "RELEASE"
                                   };
 
 process pr_init(char *filename, unsigned int pid, int *memory) {
     int i, num_instr;
     byte a[3], buffer[STR_BUFFER_SIZE];
+
+    DEBUG_PRINT("[Process] Entering process init");
     FILE *fp = fopen(filename, "rb");
     *memory = 0;
 
@@ -76,12 +85,16 @@ process pr_init(char *filename, unsigned int pid, int *memory) {
         TRY(THROW);
     }
     
+    
     TRY(fread(a, 1, 1, fp) == 1);    // instruction count
     i = a[0];
     p->text = malloc(sizeof(instruction*) * i);
     for (p->text_len = 0; p->text_len < i; p->text_len++) {
         TRY(fread(a, 1, 1, fp) == 1);
-        if (a[0] == CALCULATE || a[0] == IO) {
+        if (a[0] == CALCULATE 
+         || a[0] == IO
+         || a[0] == ACQUIRE
+         || a[0] == RELEASE) {
             TRY(fread(a+1, 1, 1, fp) == 1);
             if (a[1] == 255)
                 a[1] = (rand() % 5) + 10; // random value
@@ -93,7 +106,7 @@ process pr_init(char *filename, unsigned int pid, int *memory) {
     }
     fclose(fp);
 
-    p->pc = p->priority = p->time = 0;
+    p->pc = p->priority = p->time = p->mutexes = 0;
     p->cycles_left = p->text[0]->cycles;
     p->pid = pid;
     DEBUG_PRINT("[Process] Successfully opened %s (PID %d)!", filename, p->pid);
@@ -144,6 +157,22 @@ bool pr_run(process p) {
 
 INSTR_ENUM pr_getCurrentInstr(process p) {
     return p->text[p->pc]->type;
+}
+
+bool pr_hasMutex(process p, int mon_num) {
+    return (p->mutexes | mon_num) != 0;
+}
+
+void pr_setMutex(process p, int mon_num) {
+    p->mutexes |= mon_num;
+}
+
+void pr_unsetMutex(process p, int mon_num) {
+    p->mutexes &= ~mon_num;
+}
+
+int pr_getInstrArg(process p) {
+    return p->text[p->pc]->mutex;
 }
 
 void pr_incrementPC(process p) {

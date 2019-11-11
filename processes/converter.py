@@ -40,7 +40,14 @@ instruction_table = {
     "calculate" :   1,
     "io"        :   2,
     "yield"     :   3,
-    "out"       :   4
+    "out"       :   4,
+    "acquire"   :   5,
+    "release"   :   6
+}
+monitor_table = {
+    'a' :   0,
+    'b' :   1,
+    'c' :   2
 }
 def instr_convert(ins):
     try:
@@ -50,6 +57,8 @@ def instr_convert(ins):
                 b.append(255)
             else:
                 b.append(min(ins["cycles"], 254))
+        if ("acquire", "release").count(ins["operation"]) == 1:
+            b.append(monitor_table[ins["monitor"]])
         b.append(min(ins["memory"], 255))
         return b
     except KeyError:

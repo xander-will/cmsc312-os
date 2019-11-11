@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "list.h"
+#include "macros.h"
 
 /* nodes */
 struct node {
@@ -38,10 +40,13 @@ struct list_struct {
 };
 
 list l_init() {
+    DEBUG_PRINT("[List] Entering list init");
     list l = malloc(sizeof(struct list_struct));
+    DEBUG_PRINT("[List] Successfully malloc'd");
     l->size = 0;
     l->head = NULL;
 
+    DEBUG_PRINT("[List] Exiting list init");
     return l;
 }
 

@@ -12,9 +12,19 @@
             "memory"    : 20
         },
         {
+            "operation" : "acquire",
+            "monitor"   : "b",
+            "memory"    : 1
+        },
+        {
             "operation" : "io",
             "cycles"    : 5,
             "memory"    : 5
+        },
+        {
+            "operation" : "release",
+            "monitor"   : "b",
+            "memory"    : 1
         },
         {
             "operation" : "calculate",

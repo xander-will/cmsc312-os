@@ -2,9 +2,19 @@
     "name"   : "image_editor",
     "instructions" : [
         {
+            "operation" : "acquire",
+            "monitor"   : "a",
+            "memory"    : 1
+        },
+        {
             "operation" : "calculate",
             "cycles"    : 20,
             "memory"    : 10
+        },
+        {
+            "operation" : "release",
+            "monitor"   : "a",
+            "memory"    : 1
         },
         {
             "operation" : "calculate",
