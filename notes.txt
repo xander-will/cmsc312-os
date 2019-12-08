@@ -1,0 +1,11 @@
+two way message box for simulator thread and gui thread
+gui recieves things to print and simulator recieves actions
+
+run process function on current process in simulator
+current process is returned by the dispatcher
+
+various levels of delay + a full pause mode for part 1 interface
+
+dispatcher can choose between various schedulers
+maybe individual modules for each scheduler?
+

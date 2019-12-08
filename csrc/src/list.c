@@ -20,10 +20,12 @@ static struct node *createNode(void *p) {
 }
 
 static void destroyList(struct node *n) {
+    DEBUG_PRINT("[List] Entering destroy list");
     if (n) {
         destroyList(n->next);
         free(n);
     }
+    DEBUG_PRINT("[List] Entering destroy list");
 }
 
 static void removeNext(struct node *n) {

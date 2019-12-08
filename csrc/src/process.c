@@ -160,7 +160,7 @@ INSTR_ENUM pr_getCurrentInstr(process p) {
 }
 
 bool pr_hasMutex(process p, int mon_num) {
-    return (p->mutexes | mon_num) != 0;
+    return (p->mutexes & mon_num) != 0;
 }
 
 void pr_setMutex(process p, int mon_num) {

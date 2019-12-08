@@ -1,0 +1,42 @@
+{
+    "name"   : "test_1",
+    "instructions" : [
+        {
+            "operation" : "calculate",
+            "cycles"    : 15,
+            "memory"    : 5
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 5,
+            "memory"    : 5
+        },
+        {
+            "operation" : "acquire",
+            "monitor"   : "c",
+            "memory"    : 1
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null,
+            "memory"    : 5
+        },
+        {
+            "operation" : "release",
+            "monitor"   : "a",
+            "memory"    : 1
+        },
+        {
+            "operation" : "yield",
+            "memory"    : 1
+        },
+        {
+            "operation" : "out",
+            "memory"    : 1
+        },
+        {
+            "operation" : "exe",
+            "memory"    : 1
+        }
+    ]
+}

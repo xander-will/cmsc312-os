@@ -1,0 +1,49 @@
+{
+    "name"   : "image_editor",
+    "instructions" : [
+        {
+            "operation" : "acquire",
+            "monitor"   : "a",
+            "memory"    : 1
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 20,
+            "memory"    : 10
+        },
+        {
+            "operation" : "release",
+            "monitor"   : "a",
+            "memory"    : 1
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 10,
+            "memory"    : 5
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 15,
+            "memory"    : 5
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null,
+            "memory"    : 15
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null,
+            "memory"    : 8
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 15,
+            "memory"    : 13
+        },
+        {
+            "operation" : "exe",
+            "memory"    : 1
+        }
+    ]
+}
