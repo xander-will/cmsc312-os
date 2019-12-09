@@ -28,7 +28,7 @@ class Simulator:
         self.total_cycles += 1
         DebugPrint(f"[Simulator] Cycle {self.total_cycles}")
         
-        if not self.io and randint(0, 99) < 1:
+        if not self.io and randint(0, 99) < 5:
             self.io = True 
             self.io_cycles = randint(25, 50)
             self.dis.setIO(True)
@@ -42,7 +42,7 @@ class Simulator:
 
         if self.mode:   # user mode
             DebugPrint("[Simulator] In User Mode")
-            self.mode = self.dis.runCurrProc()
+            self.mode = self.dis.runCurrent()
         else:           # kernal mode
             DebugPrint("[Simulator] In Kernel Mode")
             self.dis.schedule()

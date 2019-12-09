@@ -21,6 +21,10 @@ class Instruction:
                 "out"       :   lambda x: None,
                 "yield"     :   lambda x: None,
                 "exe"       :   lambda x: None,
+                "fork"      :   lambda x: None,
+                "thread"    :   lambda x: x["num"],
+                "send"      :   lambda x: (x["val"], x["monitor"]), 
+                "read"      :   lambda x: x["monitor"]
             }[self.op](instr)
             self.cycle = {
                 "acquire"   :   lambda x: 1,
@@ -30,13 +34,17 @@ class Instruction:
                 "out"       :   lambda x: 1,
                 "yield"     :   lambda x: 1,
                 "exe"       :   lambda x: 1,
+                "fork"      :   lambda x: 1,
+                "thread"    :   lambda x: 1,
+                "send"      :   lambda x: 1, 
+                "read"      :   lambda x: 1
             }[self.op](instr)
             if self.cycle is None:
                 self.cycle = randint(1, 100)
 
             self.mem_list = memory.allocate(instr["memory"])
-        except ValueError:
-            DebugPrint("[Process] Improper Instruction")
+        except IndexError:
+            DebugPrint("[Process] Improper instructions")
             raise ex.ImproperInstructionError
 
     def __del__(self):
@@ -45,30 +53,23 @@ class Instruction:
 
     def run(self):
         memory.access(self.mem_list)
-                
 
-class Process:
-    def __init__(self, filename, pid, queue):
-        with open(filename, "r") as f:
-            dump = json.load(f)
-
-        self.name = dump["name"]
-
-        self.size = 0
-        for instr in dump["instructions"]:
-            self.size += instr["memory"]
-        if self.size > memory.remaining():
-            raise ex.MemoryAllocationError
-
-        self.text = list()
-        for instr in dump["instructions"]:
-            self.text.append(Instruction(self, instr))
+class PThread:
+    def __init__(self, parent, tid, text, queue):
+        self.parent = parent
+        self.tid = tid
+        self.text = text
+        self.queue = queue
 
         self.pc = self.priority = self.time = 0
         self.mutexes = list()
-        self.pid = pid
         self.cycles_left = self.text[0].cycle
-        self.queue = queue
+
+    def getName(self):
+        return self.parent.name
+
+    def createThread(self, queue):
+        return self.parent.createThread(self, queue)
 
     def setQueue(self, queue):
         self.queue = queue
@@ -81,10 +82,10 @@ class Process:
         self.cycles_left -= 1
         self.text[self.pc].run
         if self.cycles_left:
-            DebugPrint(f"[Process] PID {self.pid} just ran {self.text[self.pc].op}")
+            DebugPrint(f"[Process] TID {self.tid} just ran {self.text[self.pc].op}")
             return True
         else:
-            DebugPrint(f"[Process] PID {self.pid} just ended {self.text[self.pc].op}")
+            DebugPrint(f"[Process] TID {self.tid} just ended {self.text[self.pc].op}")
             self.pc += 1
             self.cycles_left = self.text[self.pc].cycle
             return False
@@ -93,7 +94,7 @@ class Process:
         return self.text[self.pc].op
         
     def hasMutex(self, mon):
-        return self.mutexes.count(mon)
+        return mon in self.mutexes
 
     def setMutex(self, mon):
         self.mutexes.append(mon)
@@ -108,16 +109,83 @@ class Process:
         self.pc += 1
         self.cycles_left = self.text[self.pc].cycle
 
+    def fork(self, pid, queue):
+        return self.parent.fork(self, pid, queue)
+
     def __str__(self):
-        s = f"Process ID {self.pid}\n"
-        s += f"\tName: {self.name}\n"
-        s += f"\tMemory: {self.size} MB\n"
+        s = f"Thread ID {self.tid} (Parent ID {self.parent.pid})\n"
+        s += f"\tName: {self.parent.name}\n"
+        s += f"\tMemory: {self.parent.size} MB\n"
         s += f"\tElapsed time: {self.time} cycles\n"
+        s += f"\tMutexes: {self.mutexes}\n"
         s += f"\tText section: {len(self.text)} instructions\n"
         s += f"\tCurrent instruction: {self.currentInstr()}\n"
         s += f"\tTime left in current instruction: {self.cycles_left}"
 
-        return s            
-            
+        return s    
+
+class Process:
+    def __init__(self, filename, pid, queue, fork_dump=None):
+        if fork_dump:
+            dump = fork_dump
+        else:
+            with open(filename, "r") as f:
+                dump = json.load(f)
+
+        self.name = dump["name"]
+
+        self.size = 0
+        for instr in dump["instructions"]:
+            self.size += instr["memory"]
+        if self.size > memory.remaining():
+            raise ex.MemoryAllocationError
+
+        self.text = list()
+        for instr in dump["instructions"]:
+            self.text.append(Instruction(self, instr))
+
+        self.thread_text = list()
+        if "threadinstr" in dump:
+            for instr in dump["threadinstr"]:
+                self.thread_text.append(Instruction(self, instr))
+
+        self.next_tid = 0
+        self.threads = [PThread(self, 0, self.text, queue)]
+        self.pid = pid
+        self.dump = dump
+
+    def getMain(self):
+        return self.threads[0]
+
+    def createThread(self, requester, queue):
+        self.next_tid += 1
+        self.threads.append(PThread(self, self.next_tid, requester.text[requester.pc:], queue))
+        return self.threads[-1]
+
+    def setQueue(self, queue):
+        self.queue = queue
+
+    def fork(self, requester, pid, queue):
+        new_proc = Process("", pid, queue, fork_dump=self.dump)
+        main = new_proc.getMain()
+        main.pc = requester.pc 
+        main.cycles_left = requester.cycles_left
+
+        return new_proc.getMain()
+
+    # def setTime(self, time):
+    #     self.cycles_left = time
+
+    # def currentInstr(self):
+    #     return self.text[self.pc].op
+
+    # def getInstrArg(self):
+    #     return self.text[self.pc].arg
+
+    # def incrementPC(self):
+    #     self.pc += 1
+    #     self.cycles_left = self.text[self.pc].cycle
+
+    
 
     

@@ -1,3 +1,4 @@
+from threading import Lock
 from time import time
 
 import src.exceptions as ex
@@ -17,42 +18,40 @@ class Memory:
     def __init__(self):
         self.page_table = [Page()] * self.TOTAL_MEM
         self.phys = [None] * self.PHYSICAL_MEM
-        self.virt = [None] * self.VIRTUAL_MEM 
+        self.virt = [None] * self.VIRTUAL_MEM
+        self.lock = Lock()
 
     def remaining(self):
         return self.phys.count(None) + self.virt.count(None)
     
     def full(self):
-        try:
-            self.phys.index(None)
-            self.virt.index(None)
-            return False
-        except:
-            return True
+        return False if None in self.phys and None in self.virt else False
 
     def allocate(self, size):
-        DebugPrint("[Memory] Entering memory alloc")
-        if self.full():
-            raise ex.MemoryAllocationError
+        with self.lock:
+            DebugPrint("[Memory] Entering memory alloc")
+            if self.full():
+                raise ex.MemoryAllocationError
 
-        page_list = list()
-        for page in self.page_table:
-            if page.location is None:
-                table = self.phys if self.phys.count(None) else self.virt
-                index = table.index(None)
-                table[index] = page
-                page.location = table
-                page_list.append(page)
-            if len(page_list) == size:
-                break
+            page_list = list()
+            for page in self.page_table:
+                if page.location is None:
+                    table = self.phys if self.phys.count(None) else self.virt
+                    index = table.index(None)
+                    table[index] = page
+                    page.location = table
+                    page_list.append(page)
+                if len(page_list) == size:
+                    break
 
         return page_list
 
     def deallocate(self, page_list):
-        for page in page_list:
-            index = page.location.index(page)
-            page.location[index] = None
-            page.location = None
+        with self.lock:
+            for page in page_list:
+                index = page.location.index(page)
+                page.location[index] = None
+                page.location = None
 
     def findLeastUsed(self):
         min = self.phys[0]
@@ -63,15 +62,16 @@ class Memory:
         return page
 
     def access(self, page_list):
-        for page in page_list:
-            page.counter = time()
-            if page.location is self.virt:
-                swap_p = self.findLeastUsed()
-                self.phys[self.phys.index(swap_p)] = page
-                self.virt[self.virt.index(page)] = swap_p
+        with self.lock:
+            for page in page_list:
+                page.counter = time()
+                if page.location is self.virt:
+                    swap_p = self.findLeastUsed()
+                    self.phys[self.phys.index(swap_p)] = page
+                    self.virt[self.virt.index(page)] = swap_p
 
-                swap_p.location = self.virt
-                page.location = self.phys
+                    swap_p.location = self.virt
+                    page.location = self.phys
 
 memory = Memory()
 

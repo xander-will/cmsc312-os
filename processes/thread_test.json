@@ -1,0 +1,24 @@
+{
+    "name"   : "test_1",
+    "instructions" : [
+        {
+            "operation" : "thread",
+            "num"    : 2,
+            "memory"    : 1
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 15,
+            "memory"    : 5
+        },
+        {
+            "operation" : "thread",
+            "num"    : 2,
+            "memory"    : 1
+        },
+        {
+            "operation" : "exe",
+            "memory"    : 1
+        }
+    ]
+}

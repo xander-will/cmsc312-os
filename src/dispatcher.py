@@ -1,10 +1,11 @@
+from threading import Lock, Thread
 from random import randint
 
 import src.exceptions as ex
 
 from src.globals import DebugPrint
 from src.monitor import Monitor
-from src.process import Process
+from src.process import Process, PThread
 
 class DisMonitors:
     def __init__(self):
@@ -30,7 +31,7 @@ class Dispatcher:
         for file in filelist:
             x = randint(1, 4)
             DebugPrint(f"[Dispatcher] Initializing {x} copies of {file}")
-            for _ in range(x):
+            for _ in range(1):
                 self.createProcess(file) 
         
         self.quant = self.quant_left = quant
@@ -46,11 +47,13 @@ class Dispatcher:
 
     def createProcess(self, filename):
         try:
-            self.ready.append(Process(filename, self.next_pid, self.ready))
+            proc = Process(filename, self.next_pid, self.ready)
+            self.ready.append(proc.getMain())
             self.next_pid += 1
         except ex.ImproperInstructionError:
             DebugPrint(f"[Dispatcher] {filename} failed initialization")
         except ex.MemoryAllocationError:
+            print("hello")
             self.wait_mem.append(filename)
 
     def isIdle(self):
@@ -62,56 +65,67 @@ class Dispatcher:
 
     def monitorRelease(self, proc, mon):
         if proc.hasMutex(mon):
-            new_proc = self.mutexes.get(mon).release()
-            if new_proc:
-                self.ready.append(new_proc)
+            new_thr = self.mutexes.get(mon).release()
+            if new_thr:
+                DebugPrint(f"[Dispatcher] Thread {new_thr.getName()} acquired mutex {mon}")
+                return new_thr
 
-    def runCurrProc(self):
-        if not self.current:
-            return False
+    def runCurrent(self):
+        returns = list()
+        threads = list()
+        for i, thread in enumerate(self.current):
+            returns.append(None)
+            threads.append(Thread(target=self.runThread, args=(i, thread, returns)))
+        for thread in threads:
+            thread.join()
 
-        DebugPrint(self.current)
-        ins = self.current.currentInstr()
-        
+        for i, arg in enumerate(returns):
+            if arg == True:
+                self.ready.append(self.current[i])
+                self.current.pop(i)
+            elif isinstance(arg, PThread):
+                self.ready.append(arg)
+            
+
+
+    def runThread(self, num, thread, args):
+        DebugPrint(thread)
+
+        ins = thread.currentInstr()
         if ins == "acquire":
-            mon = self.mutexes.get(self.current.getInstrArg())
-            self.current.incrementPC()
-            if mon.acquire(self.current):
-                return True
-            else:
-                self.current = None
-                return False
+            mon = self.mutexes.get(thread.getInstrArg())
+            thread.incrementPC()
+            if not mon.acquire(thread):
+                args[num] = True
         elif ins == "release":
-            self.current.incrementPC()
-            mon = self.current.getInstrArg()
-            self.monitorRelease(self.current, mon)
-            return False
+            mon = thread.getInstrArg()
+            args[num] = self.monitorRelease(thread, mon)
+            thread.incrementPC()
         elif ins == "out":
-            print(self.current)
-            self.current.incrementPC()
-            return True
+            print(thread)
+            thread.incrementPC()
         elif ins == "exe":
-            for mon in self.current.mutexes:
-                self.monitorRelease(self.current, mon)
-            self.current = None
+            for mon in thread.mutexes:
+                self.monitorRelease(thread, mon)
+            thread = None
             self.addWaitingProcs()
             return False 
         elif ins == "yield":
-            self.current.incrementPC()
+            thread.incrementPC()
             self.sch()
             return True
         elif ins == "io":
             if not self.io:
-                self.wait_io.append(self.current)
-                self.current = None
+                self.wait_io.append(thread)
+                thread = None
                 self.sch()
                 return True 
             else:
                 self.quant_left -= 1
-                if not self.current.run():
-                    self.current.setQueue(self.ready)
-                    self.ready.append(self.current)
-                    self.current = None
+                if not thread.run():
+                    thread.setQueue(self.ready)
+                    self.ready.append(thread)
+                    thread = None
                     self.sch()
                     return True
                 elif not self.quant_left:
@@ -120,10 +134,24 @@ class Dispatcher:
                     return True
         elif ins == "calculate":
             self.quant_left -= 1
-            if not self.current.run() or not self.quant_left:
+            print(self.quant_left)
+            if not thread.run() or not self.quant_left:
                 return False
             else:
                 return True
+        elif ins == "fork":
+            thread.incrementPC()
+            self.ready.append(thread.fork(self.next_pid, self.ready))
+            self.next_pid += 1
+            return True
+        elif ins == "thread":
+            arg = thread.getInstrArg()
+            thread.incrementPC()
+            for _ in range(arg):
+                self.ready.append(thread.createThread(self.ready))
+            return True
+
+        return False
         
     def setIO(self, flag):
         self.io = flag
@@ -132,16 +160,33 @@ class Dispatcher:
 
     ## Schedulers
     def SimpleRoundRobin(self):
+        # q = self.ready
+        # if self.io:
+        #     q = self.wait_io if self.wait_io else self.ready
+
+        # if self.current:
+        #     self.current.queue.append(self.current)
+        
+        # try:
+        #     p = q.pop(0)
+        #     self.current = p
+        #     self.quant_left = self.quant
+        #     DebugPrint("[Dispatcher] Ran SimpleRoundRobin")
+        # except IndexError:
+        #     DebugPrint("[Dispatcher] Ran SimpleRoundRobin, is idle")
+
         q = self.ready
         if self.io:
             q = self.wait_io if self.wait_io else self.ready
 
-        if self.current:
-            self.current.queue.append(self.current)
+        for thread in self.current:
+            thread.queue.append(thread)
+        self.current = list()
         
         try:
-            p = q.pop(0)
-            self.current = p
+            for _ in range(4):
+                if q:
+                    self.current.append(q.pop(0))
             self.quant_left = self.quant
             DebugPrint("[Dispatcher] Ran SimpleRoundRobin")
         except IndexError:
