@@ -1,5 +1,6 @@
 {
     "name"   : "image_editor",
+    "priority"  :   10,
     "instructions" : [
         {
             "operation" : "fork",

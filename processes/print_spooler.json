@@ -1,0 +1,31 @@
+{
+    "name"   : "print_spooler",
+    "priority"  :   20,
+    "daemon"    :   true,
+    "instructions" : [
+        {
+            "operation" : "io",
+            "cycles"    : 5,
+            "memory"    : 5
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : 5,
+            "memory"    : 5
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 10,
+            "memory"    : 20
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 15,
+            "memory"    : 3
+        },
+        {
+            "operation" : "exe",
+            "memory"    : 1
+        }
+    ]
+}

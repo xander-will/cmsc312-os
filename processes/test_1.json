@@ -1,5 +1,6 @@
 {
     "name"   : "test_1",
+    "priority"  :   11,
     "instructions" : [
         {
             "operation" : "calculate",

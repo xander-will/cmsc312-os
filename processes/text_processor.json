@@ -1,5 +1,6 @@
 {
     "name"   : "text_processor",
+    "priority"  :   20,
     "instructions" : [
         {
             "operation" : "calculate",

@@ -12,10 +12,13 @@ class Monitor:
         self.lock = Lock()
 
     def get(self):
-        return self.val
+        with self.lock:
+            x = self.val
+        return x
 
     def set(self, x):
-        self.val = x
+        with self.lock:
+            self.val = x
 
     def acquire(self, proc):
         with self.lock:

@@ -1,5 +1,6 @@
 {
     "name"   : "sensor_driver",
+    "priority"  :   20,
     "instructions" : [
         {
             "operation" : "io",

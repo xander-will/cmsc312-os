@@ -1,5 +1,6 @@
 {
     "name"   : "text_adventure",
+    "priority"  :   10,
     "instructions" : [
         {
             "operation" : "calculate",

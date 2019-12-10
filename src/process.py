@@ -1,6 +1,7 @@
 import json
 
 from random import randint
+from threading import Lock
 
 import src.exceptions as ex
 
@@ -55,13 +56,15 @@ class Instruction:
         memory.access(self.mem_list)
 
 class PThread:
-    def __init__(self, parent, tid, text, queue):
+    def __init__(self, parent, tid, text, queue, priority, daemon=False):
         self.parent = parent
         self.tid = tid
         self.text = text
         self.queue = queue
+        self.priority = priority
+        self.daemon = daemon
 
-        self.pc = self.priority = self.time = 0
+        self.pc = self.time = 0
         self.mutexes = list()
         self.cycles_left = self.text[0].cycle
 
@@ -82,10 +85,10 @@ class PThread:
         self.cycles_left -= 1
         self.text[self.pc].run
         if self.cycles_left:
-            DebugPrint(f"[Process] TID {self.tid} just ran {self.text[self.pc].op}")
+            DebugPrint(f"[Process] TID {self.tid} PID {self.parent.pid} just ran {self.text[self.pc].op}")
             return True
         else:
-            DebugPrint(f"[Process] TID {self.tid} just ended {self.text[self.pc].op}")
+            DebugPrint(f"[Process] TID {self.tid} PID {self.parent.pid} just ended {self.text[self.pc].op}")
             self.pc += 1
             self.cycles_left = self.text[self.pc].cycle
             return False
@@ -112,15 +115,19 @@ class PThread:
     def fork(self, pid, queue):
         return self.parent.fork(self, pid, queue)
 
+    def __repr__(self):
+        return f"TID {self.tid}/PID {self.parent.pid}"
+
     def __str__(self):
         s = f"Thread ID {self.tid} (Parent ID {self.parent.pid})\n"
         s += f"\tName: {self.parent.name}\n"
+        s += f"\tPriority: {self.priority}\n"
         s += f"\tMemory: {self.parent.size} MB\n"
         s += f"\tElapsed time: {self.time} cycles\n"
         s += f"\tMutexes: {self.mutexes}\n"
         s += f"\tText section: {len(self.text)} instructions\n"
         s += f"\tCurrent instruction: {self.currentInstr()}\n"
-        s += f"\tTime left in current instruction: {self.cycles_left}"
+        s += f"\tTime left in current instruction: {self.cycles_left}\n"
 
         return s    
 
@@ -133,6 +140,8 @@ class Process:
                 dump = json.load(f)
 
         self.name = dump["name"]
+        self.priority = dump["priority"]
+        self.daemon = dump["daemon"] if "daemon" in dump else False
 
         self.size = 0
         for instr in dump["instructions"]:
@@ -150,17 +159,21 @@ class Process:
                 self.thread_text.append(Instruction(self, instr))
 
         self.next_tid = 0
-        self.threads = [PThread(self, 0, self.text, queue)]
+        self.threads = [PThread(self, 0, self.text, queue, self.priority, daemon=self.daemon)]
         self.pid = pid
         self.dump = dump
+        self.lock = Lock()
 
     def getMain(self):
         return self.threads[0]
 
     def createThread(self, requester, queue):
-        self.next_tid += 1
-        self.threads.append(PThread(self, self.next_tid, requester.text[requester.pc:], queue))
-        return self.threads[-1]
+        with self.lock:
+            self.next_tid += 1
+            thr = PThread(self, self.next_tid, requester.text[requester.pc:], queue, self.priority, daemon=self.daemon)
+            self.threads.append(thr)
+            ret = self.threads[-1]
+        return ret
 
     def setQueue(self, queue):
         self.queue = queue

@@ -17,7 +17,7 @@ class Simulator:
         self.dis = Dispatcher(quant, filelist)
         self.mode = False   # kernal mode
         self.cycles_since_pause = 0
-        self.delay = 2
+        self.delay = 0
         self.io = False 
         self.io_cycles = 0
         self.total_cycles = 0
