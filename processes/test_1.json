@@ -3,6 +3,10 @@
     "priority"  :   11,
     "instructions" : [
         {
+            "operation" : "fork",
+            "memory"    : 5
+        },
+        {
             "operation" : "calculate",
             "cycles"    : 15,
             "memory"    : 5

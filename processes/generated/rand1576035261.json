@@ -1,0 +1,1 @@
+{"name": "rand1576035261", "priority": 3, "instructions": [{"operation": "io", "cycles": 23, "memory": 10}, {"operation": "io", "cycles": 10, "memory": 7}, {"operation": "calculate", "cycles": 10, "memory": 17}, {"operation": "exe"}]}

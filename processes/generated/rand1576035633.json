@@ -1,0 +1,59 @@
+{
+    "name": "rand1576035633",
+    "priority": 2,
+    "instructions": [
+        {
+            "operation": "io",
+            "cycles": 8,
+            "memory": 12
+        },
+        {
+            "operation": "io",
+            "cycles": 5,
+            "memory": 23
+        },
+        {
+            "operation": "calculate",
+            "cycles": 6,
+            "memory": 9
+        },
+        {
+            "operation": "io",
+            "cycles": 21,
+            "memory": 22
+        },
+        {
+            "operation": "calculate",
+            "cycles": 16,
+            "memory": 20
+        },
+        {
+            "operation": "calculate",
+            "cycles": 24,
+            "memory": 15
+        },
+        {
+            "operation": "io",
+            "cycles": 22,
+            "memory": 15
+        },
+        {
+            "operation": "calculate",
+            "cycles": 18,
+            "memory": 14
+        },
+        {
+            "operation": "io",
+            "cycles": 22,
+            "memory": 11
+        },
+        {
+            "operation": "calculate",
+            "cycles": 23,
+            "memory": 13
+        },
+        {
+            "operation": "exe"
+        }
+    ]
+}

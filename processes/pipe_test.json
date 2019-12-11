@@ -1,0 +1,19 @@
+{
+    "name"   : "pipe_test",
+    "priority"  :   10,
+    "instructions" : [
+        {
+            "operation" : "pipe",
+            "val"       : false
+        },
+        {
+            "operation" : "check"
+        },
+        {
+            "operation" : "out"
+        },
+        {
+            "operation" : "exe"
+        }
+    ]
+}

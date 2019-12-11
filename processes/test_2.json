@@ -1,0 +1,21 @@
+{
+    "name"   : "test_2",
+    "priority"  :   10,
+    "instructions" : [
+        {
+            "operation" : "send",
+            "monitor"   : "a",
+            "val"       : false
+        },
+        {
+            "operation" : "read",
+            "monitor"   : "a"
+        },
+        {
+            "operation" : "out"
+        },
+        {
+            "operation" : "exe"
+        }
+    ]
+}

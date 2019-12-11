@@ -1,7 +1,8 @@
 import json
 
-from random import randint
+from random import randint, choice
 from threading import Lock
+from time import time
 
 import src.exceptions as ex
 
@@ -25,7 +26,10 @@ class Instruction:
                 "fork"      :   lambda x: None,
                 "thread"    :   lambda x: x["num"],
                 "send"      :   lambda x: (x["val"], x["monitor"]), 
-                "read"      :   lambda x: x["monitor"]
+                "read"      :   lambda x: x["monitor"],
+                "loop"      :   lambda x: None,
+                "pipe"      :   lambda x: x["val"],
+                "check"     :   lambda x: None
             }[self.op](instr)
             self.cycle = {
                 "acquire"   :   lambda x: 1,
@@ -38,10 +42,13 @@ class Instruction:
                 "fork"      :   lambda x: 1,
                 "thread"    :   lambda x: 1,
                 "send"      :   lambda x: 1, 
-                "read"      :   lambda x: 1
+                "read"      :   lambda x: 1,
+                "loop"      :   lambda x: 1,
+                "pipe"      :   lambda x: 1,
+                "check"     :   lambda x: 1
             }[self.op](instr)
             if self.cycle is None:
-                self.cycle = randint(1, 100)
+                self.cycle = randint(1, 30)
 
             self.mem_list = memory.allocate(instr["memory"])
         except IndexError:
@@ -112,6 +119,10 @@ class PThread:
         self.pc += 1
         self.cycles_left = self.text[self.pc].cycle
 
+    def resetPC(self):
+        self.pc = 0
+        self.cycles_left = self.text[self.pc].cycle
+
     def fork(self, pid, queue):
         return self.parent.fork(self, pid, queue)
 
@@ -145,9 +156,13 @@ class Process:
 
         self.size = 0
         for instr in dump["instructions"]:
+            if "memory" not in instr:
+                instr["memory"] = 1
             self.size += instr["memory"]
         if self.size > memory.remaining():
             raise ex.MemoryAllocationError
+        if dump["instructions"][-1]["operation"] not in ["exe", "loop"]:
+            raise ex.ImproperInstructionError
 
         self.text = list()
         for instr in dump["instructions"]:
@@ -163,6 +178,14 @@ class Process:
         self.pid = pid
         self.dump = dump
         self.lock = Lock()
+        self.pipe = False
+
+    def setPipe(self, val):
+        with self.lock:
+            self.pipe = val
+
+    def getPipe(self):
+        return self.pipe
 
     def getMain(self):
         return self.threads[0]
@@ -199,6 +222,23 @@ class Process:
     #     self.pc += 1
     #     self.cycles_left = self.text[self.pc].cycle
 
-    
+def GenerateRandomProcess():
+    skeleton = {
+        "name"  :   "rand" + str(int(time())),
+        "priority"  :   randint(1, 20),
+        "instructions"  :   list()
+    }
 
-    
+    for _ in range(randint(3, 10)):
+        skeleton["instructions"].append( {
+            "operation" :   choice(["io", "calculate"]),
+            "cycles"    :   randint(5, 25),
+            "memory"    :   randint(5, 25)
+        } )
+    skeleton["instructions"].append({"operation" : "exe"})
+
+    name = "./processes/generated/" + skeleton["name"] + ".json"
+    with open(name, "w+") as f:
+        json.dump(skeleton, f, indent=4)
+
+    return name

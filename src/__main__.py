@@ -1,9 +1,12 @@
-from glob import glob
+from threading import Thread
 
-from src.simulator import Simulator
+from src.gui import GUI_MainThread
+from src.simulator import Sim_MainThread
 
-filelist = glob("./processes/*.json")
-s = Simulator(10, filelist)
+#g_thr = Thread(target=GUI_MainThread)
+s_thr = Thread(target=Sim_MainThread)
+s_thr.start()
 
-while True:
-    s.run()
+GUI_MainThread()
+
+#g_thr.start()

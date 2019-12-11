@@ -1,13 +1,21 @@
 
 from random import randint
+from time import sleep
 
-from src.globals import DebugPrint
+import src.commands as c
+
+from src.globals import DebugPrint, sim_mailbox, gui_mailbox
 from src.dispatcher import Dispatcher
 
 def PauseExecution():
     print("Type exit to close or newline to continue")
     if input() == "exit":
         exit()
+
+def Sim_MainThread():
+    s = Simulator(10, list())
+    while True:
+        s.loop()
 
 class Simulator:
 
@@ -21,8 +29,48 @@ class Simulator:
         self.io = False 
         self.io_cycles = 0
         self.total_cycles = 0
+        self.on_flag = False
+        self.refresh_time = 0.5
+        self.clock_time = 0
 
         DebugPrint("[Simulator] Successfully initialized!")
+
+    def checkMail(self):
+        if sim_mailbox.empty():
+            DebugPrint("[Simulator] No messages")
+            return
+
+        cmd = sim_mailbox.get()
+        DebugPrint(f"[Simulator] Message: {cmd}")
+
+        if cmd == "run":
+            self.on_flag = True
+        elif cmd == "stop":
+            self.on_flag = False
+        elif isinstance(cmd, c.Cmd_CreateProcess):
+            for _ in range(cmd.num):
+                self.dis.createProcess(cmd.filepath)
+        elif isinstance(cmd, c.Cmd_Quantum):
+            self.dis.quant = cmd.x
+        elif cmd == "close":
+            exit()
+        elif isinstance(cmd, c.Cmd_ChangeSpeed):
+            self.refresh_time = cmd.x
+        elif cmd == "switch":
+            self.dis.switch()
+        elif isinstance(cmd, c.Cmd_RandProcess):
+            self.dis.randomProcess(cmd.x)
+
+
+    def loop(self):
+        self.checkMail()
+        if self.on_flag:
+            self.run()
+        sleep(self.refresh_time)
+        self.clock_time += self.refresh_time
+
+    def stats(self):
+        return [f"Total cycles: {self.total_cycles}\n"] + self.dis.stats()
 
     def run(self):
         self.total_cycles += 1
@@ -48,11 +96,7 @@ class Simulator:
             self.dis.schedule()
             self.mode = True
 
-        if self.cycles_since_pause == self.delay:
-            self.cycles_since_pause = 0
-            PauseExecution()
-        else:
-            self.cycles_since_pause += 1
+        if self.total_cycles % 5 == 0:
+            gui_mailbox.put(c.Cmd_Stats(self.stats()))
 
-        print("\n")
-        
+                
