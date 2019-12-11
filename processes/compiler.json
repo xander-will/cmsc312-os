@@ -1,0 +1,54 @@
+{
+    "name"   : "compiler",
+    "priority"  :   17,
+    "instructions" : [
+        {
+            "operation" : "io",
+            "cycles"    : 20,
+            "memory"    : 4
+        },
+        {
+            "operation" : "thread",
+            "num"   :   4
+        },
+        
+        {
+            "operation" : "io",
+            "cycles"    : 15,
+            "memory"    : 5
+        },
+        {
+            "operation" : "pipe",
+            "val"   :   true
+        },
+        {
+            "operation" : "check"
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null,
+            "memory"    : 15
+        },
+        {
+            "operation" : "acquire",
+            "monitor"   : "c"
+        },
+        {
+            "operation" : "io",
+            "cycles"    : 10,
+            "memory"    : 2
+        },
+        {
+            "operation" : "release",
+            "monitor"   : "c"
+        },
+        {
+            "operation" : "calculate",
+            "cycles"    : null,
+            "memory"    : 20
+        },
+        {
+            "operation" : "exe"
+        }
+    ]
+}

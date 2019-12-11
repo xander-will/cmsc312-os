@@ -61,7 +61,6 @@ class Simulator:
         elif isinstance(cmd, c.Cmd_RandProcess):
             self.dis.randomProcess(cmd.x)
 
-
     def loop(self):
         self.checkMail()
         if self.on_flag:

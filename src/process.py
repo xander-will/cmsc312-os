@@ -130,7 +130,7 @@ class PThread:
         return f"TID {self.tid}/PID {self.parent.pid}"
 
     def __str__(self):
-        s = f"Thread ID {self.tid} (Parent ID {self.parent.pid})\n"
+        s = f"Thread ID {self.tid} (Process ID {self.parent.pid})\n"
         s += f"\tName: {self.parent.name}\n"
         s += f"\tPriority: {self.priority}\n"
         s += f"\tMemory: {self.parent.size} MB\n"
@@ -161,6 +161,9 @@ class Process:
             self.size += instr["memory"]
         if self.size > memory.remaining():
             raise ex.MemoryAllocationError
+
+        # just ensuring that the end of each
+        # process is a proper cleanup instr
         if dump["instructions"][-1]["operation"] not in ["exe", "loop"]:
             raise ex.ImproperInstructionError
 
@@ -208,19 +211,6 @@ class Process:
         main.cycles_left = requester.cycles_left
 
         return new_proc.getMain()
-
-    # def setTime(self, time):
-    #     self.cycles_left = time
-
-    # def currentInstr(self):
-    #     return self.text[self.pc].op
-
-    # def getInstrArg(self):
-    #     return self.text[self.pc].arg
-
-    # def incrementPC(self):
-    #     self.pc += 1
-    #     self.cycles_left = self.text[self.pc].cycle
 
 def GenerateRandomProcess():
     skeleton = {

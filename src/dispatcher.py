@@ -60,8 +60,9 @@ class Dispatcher:
             s.append(f"Average thread runtime: {round(self.sum_of_runtime / self.threads_ended, 2)} cycles\n")
         s.append(f"Active threads: {self.num_active_threads}\n")
         s.append(f"Processes waiting for memory: {len(self.wait_mem)}\n")
-        s.append(f"Processes waiting for io: {len(self.wait_io)}\n")
+        s.append(f"Threads waiting for io: {len(self.wait_io)}\n")
         s.append(f"Current scheduler: {self.sch.__name__}\n")
+        s.append(f"Quantum: {self.quant}\n")
 
         return s
 
@@ -85,9 +86,10 @@ class Dispatcher:
             gui_mailbox.put(c.Cmd_Error(f"{filename} is miswritten, please update and try again"))
         except ex.MemoryAllocationError:
             self.wait_mem.append(filename)
-        #except:
-        #    DebugPrint(f"[Dispatcher] {filename} failed initialization... weirdly")
-        #    gui_mailbox.put(c.Cmd_Error(f"{filename} failed init... weirdly"))
+        # including this just to cover my bases
+        except:
+            DebugPrint(f"[Dispatcher] {filename} failed initialization... weirdly")
+            gui_mailbox.put(c.Cmd_Error(f"{filename} failed init... weirdly ()"))
 
     def randomProcess(self, x):
         filename = GenerateRandomProcess()
@@ -124,7 +126,7 @@ class Dispatcher:
 
         removals = list()
         for i, arg in enumerate(returns):
-            if arg == True:
+            if arg == True:     # thread 
                 self.current[i].setQueue(self.wait)
                 self.wait.append(self.current[i])
                 removals.append(i)
@@ -133,14 +135,18 @@ class Dispatcher:
                 removals.append(i)
                 self.threads_ended += 1
                 self.sum_of_runtime += self.current[i].time
+                for mon in self.current[i].mutexes:
+                    thr = self.monitorRelease(self.current[i], mon)
+                    if thr:
+                        self.wait.append(thr)
             elif arg == "io":
                 removals.append(i)
             elif isinstance(arg, PThread):
                 self.wait.append(arg)
                 self.num_active_threads += 1
         
-        for index in reversed(removals):
-            self.current.pop(index)
+        for index in reversed(removals):    # backwards to avoid an index
+            self.current.pop(index)         # error after popping one
 
         self.quant_left -= 1
         if self.quant_left:
@@ -158,7 +164,7 @@ class Dispatcher:
             mon = self.mutexes.get(thread.getInstrArg())
             thread.incrementPC()
             if not mon.acquire(thread):
-                args[num] = True
+                args[num] = "io"    # mixed up my return cases so I'm stuck with this lol
         elif ins == "release":
             mon = thread.getInstrArg()
             args[num] = self.monitorRelease(thread, mon)
@@ -167,8 +173,6 @@ class Dispatcher:
             gui_mailbox.put(c.Cmd_ProcOut(str(thread)))
             thread.incrementPC()
         elif ins == "exe":
-            for mon in thread.mutexes:
-                self.monitorRelease(thread, mon)
             self.addWaitingProcs()
             args[num] = False
         elif ins == "yield":
@@ -183,8 +187,7 @@ class Dispatcher:
                 if not thread.run():
                     args[num] = True
         elif ins == "calculate":
-            if not thread.run():
-                args[num] = True
+            thread.run()
         elif ins == "fork":
             thread.incrementPC()
             with self.lock:
@@ -236,7 +239,7 @@ class Dispatcher:
         for thread in temp:         # cleans up some hidden errors where
             if thread not in all:   # threads duplicate themselves
                 all.append(thread)  # on accident
-                if self.pri_cntr > 20:  # aging routine
+                if self.pri_cntr > 15:  # aging routine
                     self.pri_cntr = 0
                     thread.priority -= 1 if thread.priority and not thread.daemon else 0
 
@@ -263,7 +266,6 @@ class Dispatcher:
             for _ in range(4-len(self.current)):    # background gets at least 1 each time
                 if self.bckgrnd:
                     self.current.append(self.bckgrnd.pop(0))
-        self.quant_left = self.quant
         DebugPrint("[Dispatcher] Ran PriorityScheduler")
 
     def RandomScheduler(self):
@@ -288,7 +290,6 @@ class Dispatcher:
             for _ in range(4-len(self.current)):    # background gets at least 1 each time
                 if self.bckgrnd:
                     self.current.append(self.bckgrnd.pop(0))
-        self.quant_left = self.quant
         DebugPrint("[Dispatcher] Ran RandomScheduler")
 
 

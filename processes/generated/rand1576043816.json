@@ -1,0 +1,39 @@
+{
+    "name": "rand1576043816",
+    "priority": 7,
+    "instructions": [
+        {
+            "operation": "io",
+            "cycles": 17,
+            "memory": 20
+        },
+        {
+            "operation": "io",
+            "cycles": 7,
+            "memory": 6
+        },
+        {
+            "operation": "calculate",
+            "cycles": 8,
+            "memory": 7
+        },
+        {
+            "operation": "io",
+            "cycles": 5,
+            "memory": 18
+        },
+        {
+            "operation": "calculate",
+            "cycles": 10,
+            "memory": 24
+        },
+        {
+            "operation": "calculate",
+            "cycles": 6,
+            "memory": 9
+        },
+        {
+            "operation": "exe"
+        }
+    ]
+}

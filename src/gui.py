@@ -37,6 +37,7 @@ class frame(wx.Frame):
         speedtool = toolbar.AddTool(wx.ID_ANY, 'Speed', wx.Bitmap())
         switchtool = toolbar.AddTool(wx.ID_ANY, 'Switch', wx.Bitmap())
         randtool = toolbar.AddTool(wx.ID_ANY, 'Rand', wx.Bitmap())
+        quanttool = toolbar.AddTool(wx.ID_ANY, 'Quant', wx.Bitmap())
         toolbar.Realize()
 
         panel = wx.Panel(self)
@@ -61,10 +62,19 @@ class frame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.onSpeed, speedtool)
         self.Bind(wx.EVT_TOOL, self.onSwitch, switchtool)
         self.Bind(wx.EVT_TOOL, self.onRand, randtool)
+        self.Bind(wx.EVT_TOOL, self.onQuant, quanttool)
 
         self.SetSize((500, 300))
         self.SetTitle('OS Simulator')
         self.Centre()
+
+    def onQuant(self, event):
+        x = wx.GetNumberFromUser("OS Simulator", "What would you like the quantum to be?", 
+                                    "User Entry", 10, max=1000, parent=self)
+        if x < 0:
+            return
+
+        sim_mailbox.put(c.Cmd_Quantum(x))
 
     def onRand(self, event):
         x = wx.GetNumberFromUser("OS Simulator", "How many of this process would you like to open?", 
@@ -78,7 +88,7 @@ class frame(wx.Frame):
         sim_mailbox.put("switch")
 
     def onSpeed(self, event):
-        x = wx.GetNumberFromUser("OS Simulator", "Enter a new refresh rate in hundreths of a second: ", 
+        x = wx.GetNumberFromUser("OS Simulator", "Enter a new refresh rate in hundredths of a second: ", 
                                     "User Entry", 5, max=1000, parent=self)
         if x < 1:
             return
